@@ -1,6 +1,6 @@
 [Unit]
 Description=Telephony service
-After=syslog.target
+After=syslog.target,connman.service
 
 [Service]
 Type=dbus

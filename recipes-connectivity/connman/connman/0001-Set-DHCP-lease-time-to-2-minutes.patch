@@ -1,0 +1,25 @@
+From 96b39fdcf1aaf2516d85a4482f5f788d1fe5e730 Mon Sep 17 00:00:00 2001
+From: gsola <goncal.sola@hach.com>
+Date: Wed, 10 Oct 2018 00:56:02 -0600
+Subject: [PATCH] Set DHCP lease time to 2 minutes
+
+---
+ src/tethering.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/tethering.c b/src/tethering.c
+index ad062d5..36a4772 100644
+--- a/src/tethering.c
++++ b/src/tethering.c
+@@ -256,7 +256,7 @@ void __connman_tethering_set_enabled(void)
+ 	tethering_dhcp_server = dhcp_server_start(BRIDGE_NAME,
+ 						gateway, subnet_mask,
+ 						start_ip, end_ip,
+-						24 * 3600, dns);
++						2*60, dns);
+ 	if (!tethering_dhcp_server) {
+ 		__connman_bridge_disable(BRIDGE_NAME);
+ 		__connman_ippool_unref(dhcp_ippool);
+-- 
+2.7.4
+

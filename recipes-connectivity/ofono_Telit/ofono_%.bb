@@ -1,23 +1,29 @@
-DESCRIPTION = "Telit Ofono library customization" 
-SECTION = "libs" 
+DESCRIPTION = "Telit Ofono library customization"
+SECTION = "libs"
 LICENSE = "CLOSED"
-LIC_FILES_CHKSUM = ""
-PR = "r0" 
+# LIC_FILES_CHKSUM = ""
+
+PR = "hach"
+PV = "1.23+git${SRCPV}"
 
 require ofono.inc
 
 DEPENDS += "python python-pygobject python-dbus"
 
-SRC_URI = " file://ofono.service \
-            file://ofono.sh \
-	        file://ofono-1.18_R5.00.02.B3.tar.gz \
-	        file://test-python2.tar.bz2 \
-            file://0001-Put-struct-definitions-before-using-them.patch \
-            file://0002-fix-for-USB-descriptors.patch \
-            file://0003-Change-Ofono-version-to-include-fix-USB-descriptor.patch \
-           "
+BRANCH = "github_publication_SC4200"
 
-S = "${WORKDIR}/ofono-5584e21/"
+#!!!!! This version has to be updated if a new commit on fusion_seacloud_ofono.git is done !!!!!
+SRCREV="f2a07b92bda5c4fc9dc03fa20c5bef05c4eda4ea"
+
+SRC_URI = "\
+    git://github.com/HachCompany-SC4200/fusion_seacloud_ofono.git;branch=${BRANCH} \
+    file://ofono-git-version.patch \
+	file://ofono.service \
+	file://ofono.sh \
+	file://test-python2.tar.bz2 \
+"
+
+S = "${WORKDIR}/git/"
 
 CFLAGS_append_libc-uclibc = " -D_GNU_SOURCE"
 

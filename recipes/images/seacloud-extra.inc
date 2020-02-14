@@ -74,4 +74,8 @@ IMAGE_INSTALL += " \
     tinymembench \
     ethtool \
     \
+    eject \
+    usb-modeswitch \
+    usb-modeswitch-data \
+    \
 "

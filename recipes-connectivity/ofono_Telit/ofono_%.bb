@@ -10,10 +10,9 @@ require ofono.inc
 
 DEPENDS += "python python-pygobject python-dbus"
 
-BRANCH = "github_publication_SC4200"
-
 #!!!!! This version has to be updated if a new commit on fusion_seacloud_ofono.git is done !!!!!
-SRCREV="f122bc880186d888cf8ff1cf7807f19e3e462efa"
+BRANCH = "github_publication_SC4200"
+SRCREV="3e01f278fe6a7a1c019822ac218400f47f27975c"
 
 SRC_URI = "\
     git://github.com/HachCompany-SC4200/fusion_seacloud_ofono.git;branch=${BRANCH} \

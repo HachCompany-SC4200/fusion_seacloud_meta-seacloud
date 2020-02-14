@@ -5,7 +5,7 @@ index 15381cb8..011d69b4 100644
 @@ -1,5 +1,5 @@
  AC_PREREQ(2.60)
 -AC_INIT(ofono, 1.23)
-+AC_INIT(ofono, 1.23_git0_e467ca87_hach)
++AC_INIT(ofono, 1.23_git0_683612b7_hach)
  
  AM_INIT_AUTOMAKE([foreign subdir-objects color-tests])
  AC_CONFIG_HEADERS(config.h)

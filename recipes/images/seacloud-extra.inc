@@ -1,9 +1,9 @@
 #additional packages to include in our Toradex images
 
 # Copy Licenses to image /usr/share/common-licenses, on vybrid for flash size reasons only the manifest
-COPY_LIC_MANIFEST = "1"
+COPY_LIC_MANIFEST ?= "1"
 #Bug with several MACHINES build, license files for all arch packages stored wrongly
-COPY_LIC_DIRS = "0"
+COPY_LIC_DIRS ?= "0"
 COPY_LIC_DIRS_colibri-vf = "0"
 
 #build some ipk which are needed together with CAN, but do not yet install them
@@ -16,6 +16,8 @@ DEPENDS += "gdb-cross-${TARGET_ARCH}"
 IMAGE_PREPROCESS_COMMAND = "rootfs_update_timestamp"
 
 # Removed
+#     linuxptp \
+#     libusbgx \
 #     canutils \
 #
 
@@ -40,6 +42,8 @@ IMAGE_INSTALL_append_colibri-vf-1345 = " \
 #    \
 #    joe \
 #    minicom \
+#    iperf3 \
+#    mmc-utils-cos \
 #    rt-tests \
 #    tdx-oak-sensors \
 #

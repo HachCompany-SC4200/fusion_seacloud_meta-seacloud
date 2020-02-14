@@ -13,7 +13,7 @@ DEPENDS += "python python-pygobject python-dbus"
 BRANCH = "github_publication_SC4200"
 
 #!!!!! This version has to be updated if a new commit on fusion_seacloud_ofono.git is done !!!!!
-SRCREV="f2a07b92bda5c4fc9dc03fa20c5bef05c4eda4ea"
+SRCREV="f122bc880186d888cf8ff1cf7807f19e3e462efa"
 
 SRC_URI = "\
     git://github.com/HachCompany-SC4200/fusion_seacloud_ofono.git;branch=${BRANCH} \

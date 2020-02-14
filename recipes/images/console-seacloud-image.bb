@@ -1,34 +1,16 @@
-#Angstrom image
 SUMMARY = "Image booting to a console"
 
 LICENSE = "MIT"
 
 PV = "V2.7"
 
-require recipes/images/seacloud-extra.inc
-
-IMAGE_DEV_MANAGER   = "udev"
-IMAGE_INIT_MANAGER  = "systemd"
-IMAGE_INITSCRIPTS   = " "
-IMAGE_LOGIN_MANAGER = "busybox shadow"
-
-export IMAGE_BASENAME = "console-seacloud-image"
-
-inherit image extrausers
-
 #start of the resulting deployable tarball name
-IMAGE_NAME_apalis-imx6 = "Apalis_iMX6_LinuxConsoleImage"
-IMAGE_NAME_apalis-t30 = "Apalis_T30_LinuxConsoleImage"
-IMAGE_NAME_apalis-tk1 = "Apalis_TK1_LinuxConsoleImage"
-IMAGE_NAME_colibri-imx6 = "Colibri_iMX6_LinuxConsoleImage"
-IMAGE_NAME_colibri-imx7 = "Colibri_iMX7_LinuxConsoleImage"
-IMAGE_NAME_colibri-pxa = "Colibri_PXA_LinuxConsoleImage"
-IMAGE_NAME_colibri-t20 = "Colibri_T20_LinuxConsoleImage"
-IMAGE_NAME_colibri-t30 = "Colibri_T30_LinuxConsoleImage"
+export IMAGE_BASENAME = "console-seacloud-image"
 IMAGE_NAME_colibri-vf = "Colibri_VF_LinuxConsoleImage"
 # VF is needed in the name, otherwise update.sh script has to be updated
 IMAGE_NAME_colibri-vf-1345 = "Colibri_VF_LinuxSeaCloudImage"
 IMAGE_NAME = "${MACHINE}_LinuxConsoleImage"
+
 
 #create the deployment directory-tree
 require recipes/images/seacloud-image-fstype.inc
@@ -57,12 +39,6 @@ CONMANPKGS_libc-uclibc = ""
 #don't install some id databases
 #BAD_RECOMMENDATIONS_append_colibri-vf += " udev-hwdb cpufrequtils "
 
-#deploy the X server for the tegras
-#this adds a few MB to the image, but all graphical HW acceleration is
-#available only on top of X
-IMAGE_INSTALL_append_tegra = " ${XSERVER} xterm xclock"
-IMAGE_INSTALL_append_tegra124 = " ${XSERVER} xterm xclock"
-
 IMAGE_INSTALL += " \
     angstrom-packagegroup-boot \
     packagegroup-basic \
@@ -71,15 +47,16 @@ IMAGE_INSTALL += " \
     ${ROOTFS_PKGMANAGE_PKGS} \
     timestamp-service \
     packagegroup-base-extended \
-"
-
-IMAGE_INSTALL += " \
     python-ctypes \
     python-subprocess \
     python-pyudev \
     python-enum34 \
     python-shell \
     python-pyserial \
+    python-json \
+    python-ipaddress \
+    python-multiprocessing \
+    python-netifaces \
     boost \
     ofono \
     openvpn \
@@ -87,8 +64,17 @@ IMAGE_INSTALL += " \
     sudo \
 "
 
+require recipes/images/seacloud-extra.inc
+
+IMAGE_DEV_MANAGER   = "udev"
+IMAGE_INIT_MANAGER  = "systemd"
+IMAGE_INITSCRIPTS   = " "
+IMAGE_LOGIN_MANAGER = "busybox shadow"
+
 # To have the wt static dev package into the SDK
 TOOLCHAIN_TARGET_TASK_append = " wt-staticdev uamqp-staticdev"
+
+inherit image extrausers
 
 # Add a user for the system
 EXTRA_USERS_PARAMS = "\

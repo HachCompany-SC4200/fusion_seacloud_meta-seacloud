@@ -74,12 +74,12 @@ IMAGE_INSTALL += " \
 "
 
 IMAGE_INSTALL += " \
-    uamqp \
     python-ctypes \
     python-subprocess \
     python-pyudev \
     python-enum34 \
     python-shell \
+    python-pyserial \
     boost \
     ofono \
     openvpn \
@@ -88,7 +88,7 @@ IMAGE_INSTALL += " \
 "
 
 # To have the wt static dev package into the SDK
-TOOLCHAIN_TARGET_TASK_append = " wt-staticdev"
+TOOLCHAIN_TARGET_TASK_append = " wt-staticdev uamqp-staticdev"
 
 # Add a user for the system
 EXTRA_USERS_PARAMS = "\

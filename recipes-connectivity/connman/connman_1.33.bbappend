@@ -5,6 +5,7 @@ SRC_URI += "file://main.conf.reference \
 	    file://0001-service-Use-PreferredTechnologies-for-service-orderi.patch \
 	    file://0001-service-Add-EnableOnlineCheck-config-option.patch \
 	    file://0001-service-Fix-loose-mode-routing-not-enabled-with-Enab.patch \
+	    file://0001-Enable-roaming-Telenor.patch \
 	   "
 
 

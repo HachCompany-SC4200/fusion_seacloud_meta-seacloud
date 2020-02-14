@@ -1,0 +1,43 @@
+From 226b9e46430fbe2b5293b241b3657d844eef5b0e Mon Sep 17 00:00:00 2001
+From: Maxime Chevallier <maxime.chevallier@smile.fr>
+Date: Tue, 20 Sep 2016 16:42:00 +0200
+Subject: [PATCH] service: Use PreferredTechnologies for service ordering
+
+When services have the same state, the PreferredTechnologies list needs
+to be taken into account for service ordering. This applies when all
+services are 'ready' but none is 'online'.
+
+This patch checks for services in PreferredTechnologies before
+defaulting to the hardcoded list in service_compare.
+---
+ src/service.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/src/service.c b/src/service.c
+index 37af5fc..ee10e6c 100644
+--- a/src/service.c
++++ b/src/service.c
+@@ -4759,6 +4759,20 @@ static gint service_compare(gconstpointer a, gconstpointer b)
+ 		return 1;
+ 
+ 	if (service_a->type != service_b->type) {
++		unsigned int *tech_array;
++		int i;
++
++		tech_array = connman_setting_get_uint_list(
++						"PreferredTechnologies");
++		if (tech_array) {
++			for (i = 0; tech_array[i]; i++) {
++				if (tech_array[i] == service_a->type)
++					return -1;
++
++				if (tech_array[i] == service_b->type)
++					return 1;
++			}
++		}
+ 
+ 		if (service_a->type == CONNMAN_SERVICE_TYPE_ETHERNET)
+ 			return -1;
+-- 
+2.7.4
+

@@ -1,0 +1,43 @@
+From 2706a139ad6bfc2b580bd3c08b993fdec1a8bc21 Mon Sep 17 00:00:00 2001
+From: Guillaume Deroire <guillaume.deroire@hach.com>
+Date: Fri, 14 Jul 2017 14:49:46 +0200
+Subject: [PATCH] service: Fix loose mode routing not enabled with
+ EnableOnlineCheck option
+
+When EnableOnlineCheck option is enabled, the rp_filter is not updated
+if there are more than one service available. The result is that some
+packets are blocked.
+---
+ src/service.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/src/service.c b/src/service.c
+index a255b41..04225af 100644
+--- a/src/service.c
++++ b/src/service.c
+@@ -5804,16 +5804,19 @@ int __connman_service_ipconfig_indicate_state(struct connman_service *service,
+ 		break;
+ 	case CONNMAN_SERVICE_STATE_READY:
+ 		if (connman_setting_get_bool("EnableOnlineCheck"))
+-			if (type == CONNMAN_IPCONFIG_TYPE_IPV4) {
++			if (type == CONNMAN_IPCONFIG_TYPE_IPV4)
+ 				check_proxy_setup(service);
+-				service_rp_filter(service, true);
+-			} else {
++			else {
+ 				service->online_check_count = 1;
+ 				__connman_wispr_start(service, type);
+ 			}
+ 		else
+ 			connman_info("Online check disabled. "
+ 				"Default service remains in READY state.");
++
++		if (type == CONNMAN_IPCONFIG_TYPE_IPV4)
++			service_rp_filter(service, true);
++
+  		break;
+ 	case CONNMAN_SERVICE_STATE_ONLINE:
+ 		break;
+-- 
+2.7.4
+

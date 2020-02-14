@@ -1,0 +1,78 @@
+From 4d17fff96273b8eda50c7ec1e49b4ab83540e705 Mon Sep 17 00:00:00 2001
+From: Guillaume Deroire <guillaume.deroire@hach.com>
+Date: Wed, 27 Jul 2016 13:57:16 +0200
+Subject: [PATCH] Add YOCTO target
+
+---
+ fusion_fw/Arch.rules     | 12 ++++++++++++
+ fusion_fw/Makefile.rules | 17 +++++++++++++++++
+ 2 files changed, 29 insertions(+)
+
+diff --git a/fusion_fw/Arch.rules b/fusion_fw/Arch.rules
+index e55f335..ebac4a4 100644
+--- a/fusion_fw/Arch.rules
++++ b/fusion_fw/Arch.rules
+@@ -69,6 +69,18 @@ ARCHIVER = ar
+ DEFINES += -DLINUX=1 -DUNIX=1 -D__SH4__
+ CFLAGS +=  $(GCC_WARNINGS) $(OPTFLAGS)
+ 
++else ifeq ($(ARCH), YOCTO)
++
++TOOLSPREFIX = $(PREFIX)
++COMPILER = $(CC)
++CXX_COMPILER = $(CXX)
++LINKER = $(LD)
++#OBJDUMP_TOOL = objdump
++#OBJCOPY_TOOL = objcopy
++#ARCHIVER = ar
++DEFINES += -DLINUX=1 -DUNIX=1 -D__SH4__
++CFLAGS +=  $(GCC_WARNINGS) $(OPTFLAGS)
++
+ else
+ $(warning #### ARCH has no valid setting. PC,SH4,VF50)
+ endif
+diff --git a/fusion_fw/Makefile.rules b/fusion_fw/Makefile.rules
+index 194e03e..883e82c 100644
+--- a/fusion_fw/Makefile.rules
++++ b/fusion_fw/Makefile.rules
+@@ -22,6 +22,8 @@ ifeq ($(ARCH), SH4)
+ PATH = $(shell echo $$PATH):$(TOP)/../FPM_spec/emdist/devhost/rootfs/usr/bin
+ else ifeq ($(ARCH), VF50)
+ PATH = $(shell echo $$PATH):$(TOP)/../SeaCloud_spec/Delivery/devhost/gcc-linaro/bin
++else ifeq ($(ARCH), YOCTO)
++$(info #### YOCTO architecture!)
+ else ifeq ($(ARCH), PC)
+ else
+ $(warning #### ARCH has no valid setting. PC,SH4)
+@@ -142,6 +144,20 @@ LINKER = ld
+ include $(TOP)/Arch.rules
+ 
+ # Tools ...
++ifeq ($(ARCH), YOCTO)
++CP = cp
++MV = mv
++$(info #### CC=$(CC))
++$(info #### CXX=$(CXX))
++$(info #### AR=$(AR))
++$(info #### LD=$(LD))
++$(info #### NM=$(NM))
++$(info #### STRIP=$(STRIP))
++$(info #### OBJCOPY=$(OBJCOPY))
++$(info #### OBJDUMP=$(OBJDUMP))
++$(info #### CP=$(CP))
++$(info #### MV=$(MV))
++else
+ CC = $(TOOLSPREFIX)$(COMPILER)
+ CXX = $(TOOLSPREFIX)$(CXX_COMPILER)
+ AR = $(TOOLSPREFIX)$(ACHIVER)
+@@ -152,6 +168,7 @@ OBJCOPY = $(TOOLSPREFIX)$(OBJCOPY_TOOL)
+ OBJDUMP = $(TOOLSPREFIX)$(OBJDUMP_TOOL)
+ CP = cp
+ MV = mv
++endif
+ 
+ 
+ 
+-- 
+1.9.1
+

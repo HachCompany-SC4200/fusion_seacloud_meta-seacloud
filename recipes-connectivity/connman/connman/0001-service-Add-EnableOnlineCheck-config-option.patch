@@ -1,0 +1,132 @@
+From 18964a113ab703e3922e1a156407b11d70c05b08 Mon Sep 17 00:00:00 2001
+From: Guillaume Deroire <guillaume.deroire@hach.com>
+Date: Tue, 6 Jun 2017 16:57:46 +0200
+Subject: [PATCH] [PATCH] service: Add EnableOnlineCheck config option
+
+Global config option, which allows to enable/disable (enabled by default)
+use of http get in wispr to transition a default service from READY to
+ONLINE state.
+---
+ src/main.c    | 18 ++++++++++++++++++
+ src/main.conf |  9 +++++++++
+ src/service.c | 20 ++++++++++++--------
+ 3 files changed, 39 insertions(+), 8 deletions(-)
+
+diff --git a/src/main.c b/src/main.c
+index ae01ca9..ee65a5c 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -74,6 +74,7 @@ static struct {
+ 	char **tethering_technologies;
+ 	bool persistent_tethering_mode;
+ 	bool enable_6to4;
++	bool enable_online_check;
+ } connman_settings  = {
+ 	.bg_scan = true,
+ 	.pref_timeservers = NULL,
+@@ -88,6 +89,7 @@ static struct {
+ 	.tethering_technologies = NULL,
+ 	.persistent_tethering_mode = false,
+ 	.enable_6to4 = false,
++	.enable_online_check = true,
+ };
+ 
+ #define CONF_BG_SCAN                    "BackgroundScanning"
+@@ -103,6 +105,7 @@ static struct {
+ #define CONF_TETHERING_TECHNOLOGIES      "TetheringTechnologies"
+ #define CONF_PERSISTENT_TETHERING_MODE  "PersistentTetheringMode"
+ #define CONF_ENABLE_6TO4                "Enable6to4"
++#define CONF_ENABLE_ONLINE_CHECK        "EnableOnlineCheck"
+ 
+ static const char *supported_options[] = {
+ 	CONF_BG_SCAN,
+@@ -118,6 +121,7 @@ static const char *supported_options[] = {
+ 	CONF_TETHERING_TECHNOLOGIES,
+ 	CONF_PERSISTENT_TETHERING_MODE,
+ 	CONF_ENABLE_6TO4,
++	CONF_ENABLE_ONLINE_CHECK,
+ 	NULL
+ };
+ 
+@@ -365,6 +369,17 @@ static void parse_config(GKeyFile *config)
+ 		connman_settings.enable_6to4 = boolean;
+ 
+ 	g_clear_error(&error);
++
++	boolean = __connman_config_get_bool(config, "General",
++					CONF_ENABLE_ONLINE_CHECK, &error);
++	if (!error) {
++		connman_settings.enable_online_check = boolean;
++		if (!boolean)
++			connman_info("Online check disabled by main config.");
++	}
++
++	g_clear_error(&error);
++
+ }
+ 
+ static int config_init(const char *file)
+@@ -542,6 +557,9 @@ bool connman_setting_get_bool(const char *key)
+ 	if (g_str_equal(key, CONF_ENABLE_6TO4))
+ 		return connman_settings.enable_6to4;
+ 
++	if (g_str_equal(key, CONF_ENABLE_ONLINE_CHECK))
++		return connman_settings.enable_online_check;
++
+ 	return false;
+ }
+ 
+diff --git a/src/main.conf b/src/main.conf
+index eb352fb..5c375c4 100644
+--- a/src/main.conf
++++ b/src/main.conf
+@@ -77,6 +77,15 @@
+ # normal. Default value is false.
+ # SingleConnectedTechnology = false
+ 
++# Enable use of http get as on online status check.
++# When a service is in a READY state, and is selected as default,
++# ConnMan will issue an HTTP GET request to verify that end-to-end
++# connectivity is successful. Only then the service will be
++# transitioned to ONLINE state.
++# If this setting is false, the default service will remain in READY state.
++# Default value is true.
++# EnableOnlineCheck = false
++
+ # List of technologies for which tethering is allowed separated by ",".
+ # The default value is wifi,bluetooth,gadget. Only those technologies
+ # listed here are used for tethering. If ethernet tethering is desired,
+diff --git a/src/service.c b/src/service.c
+index 15dfc2a..65081ce 100644
+--- a/src/service.c
++++ b/src/service.c
+@@ -5774,14 +5774,18 @@ int __connman_service_ipconfig_indicate_state(struct connman_service *service,
+ 	case CONNMAN_SERVICE_STATE_CONFIGURATION:
+ 		break;
+ 	case CONNMAN_SERVICE_STATE_READY:
+-		if (type == CONNMAN_IPCONFIG_TYPE_IPV4) {
+-			check_proxy_setup(service);
+-			service_rp_filter(service, true);
+-		} else {
+-			service->online_check_count = 1;
+-			__connman_wispr_start(service, type);
+-		}
+-		break;
++		if (connman_setting_get_bool("EnableOnlineCheck"))
++			if (type == CONNMAN_IPCONFIG_TYPE_IPV4) {
++				check_proxy_setup(service);
++				service_rp_filter(service, true);
++			} else {
++				service->online_check_count = 1;
++				__connman_wispr_start(service, type);
++			}
++		else
++			connman_info("Online check disabled. "
++				"Default service remains in READY state.");
++ 		break;
+ 	case CONNMAN_SERVICE_STATE_ONLINE:
+ 		break;
+ 	case CONNMAN_SERVICE_STATE_DISCONNECT:
+-- 
+2.7.4
+

@@ -1,0 +1,55 @@
+setenv create_bcb 'nand erase.part vf-bcb && writebcb 0x20000 0x20000'
+setenv update_configblock 'tftpboot ${loadaddr} ${board_name}/configblock.bin && nand write ${loadaddr} 0x800 ${filesize}'
+
+# Migrate to UBI volume based boot schema
+# Create dual bank
+# kernel has a size of 9.75 MiB
+# dtb has a size of 248 KiB
+# rootfs has a size of 221.5 MiB
+# appfs has a size of 10 MiB
+# Create in two steps because in one step, it doesn't create kernel-1, don't know why...
+setenv prepare_kernel_fdt  'ubi create kernel-0 0x9C0000 static && ubi create dtb-0 0x20000 static'
+setenv prepare_kernel_fdt1 'ubi create kernel-1 0x9C0000 static && ubi create dtb-1 0x20000 static'
+
+setenv prepare_appfs 'ubi create appfs-0 0x0A00000 dynamic && ubi create appfs-1 0x0A00000 dynamic'
+setenv prepare_rootfs 'ubi create rootfs-0 0xDD80000 dynamic && ubi create rootfs-1 0xDD80000 dynamic'
+
+setenv prepare_ubi 'echo prepare_ubi && ubi part ubi && if ubi check rootfs-${bootable_partition} && ubi check kernel-${bootable_partition} && ubi check appfs-${bootable_partition}; then else if ubi check rootfs-${bootable_partition}; then ubi remove rootfs-${bootable_partition}; fi; if ubi check kernel-${bootable_partition}; then ubi remove kernel-${bootable_partition}; fi; if ubi check dtb-${bootable_partition}; then ubi remove dtb-${bootable_partition}; fi; && if ubi check appfs-${bootable_partition}; then else run prepare_appfs; fi; fi; run prepare_kernel_fdt && run prepare_rootfs;'
+
+# Call clean_ubi when there is an issue with the partition layout -> remove existing partitions
+setenv clean_ubi 'echo clean_ubi && ubi part ubi && for i in 0 1; do setenv bootable_partition ${i} && if ubi check rootfs-${bootable_partition}; then ubi remove rootfs-${bootable_partition}; fi; && if ubi check kernel-${bootable_partition}; then ubi remove kernel-${bootable_partition}; fi; && if ubi check appfs-${bootable_partition}; then ubi remove appfs-${bootable_partition}; fi; && if ubi check dtb-${bootable_partition}; then ubi remove dtb-${bootable_partition}; fi; done; && setenv bootable_partition 0'
+
+# Call to build the partition layout when there is an issue with partitions layout
+setenv make_layout 'echo make_layout && run clean_ubi && run prepare_kernel_fdt && run prepare_kernel_fdt1 && run prepare_appfs && run prepare_rootfs'
+
+setenv update_uboot 'tftpboot ${loadaddr} ${board_name}/u-boot-nand.imx && nand erase.part u-boot && nand erase.part u-boot-env && nand write ${loadaddr} u-boot'
+setenv update_kernel 'tftpboot ${loadaddr} ${board_name}/zImage && ubi write ${loadaddr} kernel-${bootable_partition} ${filesize}'
+setenv update_fdt 'tftpboot ${loadaddr} ${board_name}/${soc}-colibri-${fdt_board}.dtb && ubi write ${loadaddr} dtb-${bootable_partition} ${filesize}'
+setenv update_rootfs 'tftpboot ${loadaddr} ${board_name}/ubifs.img && ubi write ${loadaddr} rootfs-${bootable_partition} ${filesize}'
+setenv update_appfs 'tftpboot ${loadaddr} ${board_name}/appfs.img && ubi write ${loadaddr} appfs-${bootable_partition} ${filesize}'
+
+# Update the region "bootable_partition" and update appfs
+setenv update_create_layout 'run update_uboot; run make_layout && run update_appfs && run update_kernel && run update_fdt && run update_rootfs'
+
+# Update the region "bootable_partition" without changing the appfs
+setenv update_existing_layout 'run update_uboot; run prepare_ubi && run update_kernel && run update_fdt && run update_rootfs'
+
+# Upgrade part 1, write new U-Boot, but with old ECC format still...
+# Store config block temporarly in memory at kernel_addr_r.
+setenv upgrade_part1 'run update_uboot && nand read ${kernel_addr_r} 0x800 0x20 && echo "${upgrade_part1_msg}"'
+setenv upgrade_part1_msg 'Successfully updated U-Boot, NAND upgrade required. Enter "reset", interrupt boot process and enter "run setupdate; run upgrade_part2" to complete upgrade.'
+
+# Upgrade part 2, use new ECC format for the whole device...
+setenv upgrade_part2 'run create_bcb && nand write ${kernel_addr_r} 0x800 0x20 && run update_uboot && nand erase.part ubi && run update_rootfs && run update_appfs && echo ${upgrade_part2_msg}'
+setenv upgrade_part2_msg 'Successfully upgraded module, enter "reset" to restart the module.'
+
+# This script checks that the ubi layout is the one expected
+setenv check_ubi_layout "ubi part ubi && ubi check appfs-0 && ubi check appfs-1 && ubi check rootfs-0 && ubi check rootfs-1 && ubi check kernel-0 && ubi check kernel-1 && ubi check dtb-0 && ubi check dtb-1"
+
+# fsl_nfc indicates old NAND format (24-bit ECC), start migration process
+setenv update 'mtdparts default && if test "${mtdids}" = "nand0=fsl_nfc"; then; run upgrade_part1; fi; && setenv bootable_partition 0 && echo bootable_partition=${bootable_partition} && if run check_ubi_layout; then echo 'Do not create layout' && run update_existing_layout; else echo 'Create layout' && run update_create_layout; fi; saveenv; reset'
+
+echo 'enter "run update" to update the entire module'
+
+
+

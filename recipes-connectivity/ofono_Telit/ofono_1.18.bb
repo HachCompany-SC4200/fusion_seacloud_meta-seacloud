@@ -8,11 +8,13 @@ require ofono.inc
 
 DEPENDS += "python python-pygobject python-dbus"
 
-SRC_URI = "file://ofono.service \
-           file://ofono.sh \
-	   file://ofono-1.18_R5.00.02.B3.tar.gz \
-	   file://test-python2.tar.bz2 \
-           file://0001-Put-struct-definitions-before-using-them.patch \
+SRC_URI = " file://ofono.service \
+            file://ofono.sh \
+	        file://ofono-1.18_R5.00.02.B3.tar.gz \
+	        file://test-python2.tar.bz2 \
+            file://0001-Put-struct-definitions-before-using-them.patch \
+            file://0002-fix-for-USB-descriptors.patch \
+            file://0003-Change-Ofono-version-to-include-fix-USB-descriptor.patch \
            "
 
 S = "${WORKDIR}/ofono-5584e21/"

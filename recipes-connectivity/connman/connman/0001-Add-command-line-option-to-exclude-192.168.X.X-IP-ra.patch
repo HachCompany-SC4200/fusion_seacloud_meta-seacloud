@@ -1,0 +1,190 @@
+From 0a26b5710b36ba52e6d864e542108f2350b1f80b Mon Sep 17 00:00:00 2001
+From: gsola <goncal.sola@hach.com>
+Date: Thu, 19 Jul 2018 00:26:16 -0600
+Subject: [PATCH] Add command line option to exclude 192.168.X.X IP range from
+ DHCP serverr
+
+---
+ src/connman.h      |  2 +-
+ src/ippool.c       | 23 ++++++++++++++++++-----
+ src/main.c         |  7 ++++++-
+ unit/test-ippool.c | 13 +++++++------
+ 4 files changed, 32 insertions(+), 13 deletions(-)
+
+diff --git a/src/connman.h b/src/connman.h
+index e849ed8..1843f8a 100644
+--- a/src/connman.h
++++ b/src/connman.h
+@@ -945,7 +945,7 @@ struct connman_ippool;
+ typedef void (*ippool_collision_cb_t) (struct connman_ippool *pool,
+ 					void *user_data);
+ 
+-int __connman_ippool_init(void);
++int __connman_ippool_init(gboolean enable_16_bit_block);	//CLAROS-3203
+ void __connman_ippool_cleanup(void);
+ 
+ #define __connman_ippool_ref(ipconfig) \
+diff --git a/src/ippool.c b/src/ippool.c
+index 8a645da..d9f48da 100644
+--- a/src/ippool.c
++++ b/src/ippool.c
+@@ -63,6 +63,7 @@ static uint32_t block_16_bits;
+ static uint32_t block_20_bits;
+ static uint32_t block_24_bits;
+ static uint32_t subnet_mask_24;
++static bool block_16_bit_enabled;	//CLAROS-3203
+ 
+ struct connman_ippool *
+ __connman_ippool_ref_debug(struct connman_ippool *pool,
+@@ -127,7 +128,8 @@ static uint32_t next_block(uint32_t block)
+ 	next += 1;
+ 
+ 	if (next == 255) {
+-		if ((block & 0xffff0000) == block_16_bits) {
++		//CLAROS-3203
++		if (block_16_bit_enabled && ((block & 0xffff0000) == block_16_bits)) {
+ 			/*
+ 			 * Reached the end of the 16 bit block, switch
+ 			 * to the 20-bit block.
+@@ -162,7 +164,11 @@ static uint32_t next_block(uint32_t block)
+ 				 * Reached the end of the 24 bit
+ 				 * block, switch to the 16-bit block.
+ 				 */
+-				return block_16_bits;
++				//CLAROS-3203
++				if (block_16_bit_enabled)
++					return block_16_bits;
++				else
++					return block_20_bits;
+ 			}
+ 
+ 			return (block & 0xff000000) |
+@@ -192,8 +198,11 @@ static uint32_t get_free_block(unsigned int size)
+ 	 */
+ 	if (last_block)
+ 		block = last_block;
+-	else
++	//CLAROS-3203
++	else if (block_16_bit_enabled)
+ 		block = block_16_bits;
++	else
++	 	block = block_20_bits;
+ 
+ 	do {
+ 		collision = false;
+@@ -431,7 +440,7 @@ const char *__connman_ippool_get_subnet_mask(struct connman_ippool *pool)
+ 	return pool->subnet_mask;
+ }
+ 
+-int __connman_ippool_init(void)
++int __connman_ippool_init(gboolean enable_16_bit_block)
+ {
+ 	DBG("");
+ 
+@@ -439,7 +448,11 @@ int __connman_ippool_init(void)
+ 	block_20_bits = ntohl(inet_addr("172.16.0.0"));
+ 	block_24_bits = ntohl(inet_addr("10.0.0.0"));
+ 	subnet_mask_24 = ntohl(inet_addr("255.255.255.0"));
+-
++	//CLAROS-3203
++	if (enable_16_bit_block)
++		block_16_bit_enabled = true;
++	else
++		block_16_bit_enabled = false;
+ 	return 0;
+ }
+ 
+diff --git a/src/main.c b/src/main.c
+index b02639e..7423c24 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -486,6 +486,7 @@ static gchar *option_wifi = NULL;
+ static gboolean option_detach = TRUE;
+ static gboolean option_dnsproxy = TRUE;
+ static gboolean option_backtrace = TRUE;
++static gboolean option_16bitblock = TRUE;	//CLAROS-3203
+ static gboolean option_version = FALSE;
+ 
+ static bool parse_debug(const char *key, const char *value,
+@@ -525,6 +526,10 @@ static GOptionEntry options[] = {
+ 	{ "nobacktrace", 0, G_OPTION_FLAG_REVERSE,
+ 				G_OPTION_ARG_NONE, &option_backtrace,
+ 				"Don't print out backtrace information" },
++	//CLAROS-3203
++	{ "no16bitblock", 0, G_OPTION_FLAG_REVERSE,
++				G_OPTION_ARG_NONE, &option_16bitblock,
++				"Don't allow DCHP server to assign 16-bit block addresses (192.168.0.0 - 192.168.255.255)"},
+ 	{ "version", 'v', 0, G_OPTION_ARG_NONE, &option_version,
+ 				"Show version information and exit" },
+ 	{ NULL },
+@@ -686,7 +691,7 @@ int main(int argc, char *argv[])
+ 	__connman_config_init();
+ 	__connman_device_init(option_device, option_nodevice);
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(option_16bitblock);	//CLAROS-3203
+ 	__connman_iptables_init();
+ 	__connman_firewall_init();
+ 	__connman_nat_init();
+diff --git a/unit/test-ippool.c b/unit/test-ippool.c
+index 17fac9d..c0ea1ac 100644
+--- a/unit/test-ippool.c
++++ b/unit/test-ippool.c
+@@ -44,7 +44,7 @@ static void test_case_1(void)
+ 	struct connman_ippool *pool;
+ 	int i;
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(true);	//CLAROS-3203
+ 
+ 	pool = __connman_ippool_create(23, 1, 500, NULL, NULL);
+ 	g_assert(!pool);
+@@ -69,7 +69,7 @@ static void test_case_2(void)
+ 	const char *end_ip;
+ 	int i;
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(true);	//CLAROS-3203
+ 
+ 	/* Test the IP range */
+ 	for (i = 1; i < 254; i++) {
+@@ -109,7 +109,8 @@ static void test_case_3(void)
+ 	GSList *list = NULL, *it;
+ 	int i = 0;
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(true);	//CLAROS-3203
++
+ 
+ 	/*
+ 	 *                                             Number of addresses
+@@ -187,7 +188,7 @@ static void test_case_4(void)
+ 	const char *end_ip;
+ 	int flag;
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(true);	//CLAROS-3203
+ 
+ 	/* Test the IP range collision */
+ 
+@@ -261,7 +262,7 @@ static void test_case_5(void)
+ 	const char *end_ip;
+ 	int flag;
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(true);	//CLAROS-3203
+ 
+ 	/* Test the IP range collision */
+ 
+@@ -346,7 +347,7 @@ static void test_case_6(void)
+ 	const char *end_ip;
+ 	int flag;
+ 
+-	__connman_ippool_init();
++	__connman_ippool_init(true);	//CLAROS-3203
+ 
+ 	/* Test the IP range collision */
+ 
+-- 
+2.7.4
+

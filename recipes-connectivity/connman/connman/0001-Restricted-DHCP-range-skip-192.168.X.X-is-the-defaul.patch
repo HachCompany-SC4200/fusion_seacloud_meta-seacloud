@@ -1,0 +1,38 @@
+From 290aaf84a5b177e777b9b4822c294761788a03ee Mon Sep 17 00:00:00 2001
+From: gsola <goncal.sola@hach.com>
+Date: Thu, 19 Jul 2018 07:31:47 -0600
+Subject: [PATCH] Restricted DHCP range (skip 192.168.X.X) is the default
+ option
+
+---
+ src/main.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/main.c b/src/main.c
+index 7423c24..10cc2ca 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -486,7 +486,7 @@ static gchar *option_wifi = NULL;
+ static gboolean option_detach = TRUE;
+ static gboolean option_dnsproxy = TRUE;
+ static gboolean option_backtrace = TRUE;
+-static gboolean option_16bitblock = TRUE;	//CLAROS-3203
++static gboolean option_16bitblock = FALSE;	//CLAROS-3203
+ static gboolean option_version = FALSE;
+ 
+ static bool parse_debug(const char *key, const char *value,
+@@ -527,9 +527,9 @@ static GOptionEntry options[] = {
+ 				G_OPTION_ARG_NONE, &option_backtrace,
+ 				"Don't print out backtrace information" },
+ 	//CLAROS-3203
+-	{ "no16bitblock", 0, G_OPTION_FLAG_REVERSE,
++	{ "enable16bitblock", 0, G_OPTION_FLAG_NONE,
+ 				G_OPTION_ARG_NONE, &option_16bitblock,
+-				"Don't allow DCHP server to assign 16-bit block addresses (192.168.0.0 - 192.168.255.255)"},
++				"Enable DCHP server to also assign 16-bit block addresses (192.168.X.X)"},
+ 	{ "version", 'v', 0, G_OPTION_ARG_NONE, &option_version,
+ 				"Show version information and exit" },
+ 	{ NULL },
+-- 
+2.7.4
+

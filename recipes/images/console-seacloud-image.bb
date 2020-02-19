@@ -62,6 +62,7 @@ IMAGE_INSTALL += " \
     openvpn \
     wt \
     sudo \
+    libavahi-compat-libdnssd \
 "
 
 require recipes/images/seacloud-extra.inc

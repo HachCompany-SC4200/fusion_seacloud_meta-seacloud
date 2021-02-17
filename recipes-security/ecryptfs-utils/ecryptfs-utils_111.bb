@@ -23,6 +23,7 @@ SRC_URI[sha256sum] = "112cb3e37e81a1ecd8e39516725dec0ce55c5f3df6284e0f4cc0f11875
 inherit autotools pkgconfig systemd
 
 SYSTEMD_PACKAGES = "${PN}"
+SYSTEMD_SERVICE_${PN} = "ecryptfs.service"
 
 EXTRA_OECONF = "\
     --libdir=${base_libdir} \

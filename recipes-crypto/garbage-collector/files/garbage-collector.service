@@ -1,0 +1,9 @@
+[Unit]
+Description=Garbage Collector Service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/garbage-collector.sh
+
+[Install]
+WantedBy=timers.target

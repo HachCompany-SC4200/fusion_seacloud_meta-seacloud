@@ -63,6 +63,7 @@ IMAGE_INSTALL += " \
     wt \
     sudo \
     libavahi-compat-libdnssd \
+    fcc-crypto \
 "
 
 require recipes/images/seacloud-extra.inc

@@ -1,0 +1,9 @@
+[Unit]
+Description=Garbage Collector Timer
+After=fcc-crypto.service
+
+[Timer]
+OnUnitActiveSec=30 days
+
+[Install]
+WantedBy=timers.target

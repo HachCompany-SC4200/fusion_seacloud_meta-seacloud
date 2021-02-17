@@ -1,0 +1,13 @@
+[Unit]
+Description=Persistent partition encryption support service
+After=encrypt.target
+
+[Service]
+User=root
+Type=forking
+ExecStart=/etc/fcc-crypto.sh
+TimeoutSec=30
+Restart=on-failure
+RestartSec=30
+StartLimitInterval=350
+StartLimitBurst=10

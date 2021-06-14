@@ -85,29 +85,7 @@ fakeroot do_imagedeploy() {
 
     #create tarball
     DATE=`date +%Y%m%d`
-
-    set +e
-    echo "List processes"
-    ps aux
-    echo "Openned files before"
-    lsof | grep ${IMAGE_DIR}
-    echo "List files access, change, modified time before"
-    find ${IMAGE_DIR} -exec stat -c %x,%z,%y,%n {} \;
-
-    echo "Generate archive"
-    tar -cjvf ${DEPLOY_DIR_IMAGE}/${IMAGE_DIR}_${DATE}.tar.bz2 ${IMAGE_DIR}
-    result=$?
-
-    echo "Openned files after"
-    lsof | grep ${IMAGE_DIR}
-    echo "List processes after"
-    ps aux
-    echo "List files access, change, modified time after"
-    find ${IMAGE_DIR} -exec stat -c %x,%z,%y,%n {} \;
-
-    [ "$result" -ne "0" ] && exit 1
-    set -e
-
+    tar -cjf ${DEPLOY_DIR_IMAGE}/${IMAGE_DIR}_${DATE}.tar.bz2 ${IMAGE_DIR}
     ln -fs ${IMAGE_DIR}_${DATE}.tar.bz2 ${DEPLOY_DIR_IMAGE}/${IMAGE_NAME}
 }
 
